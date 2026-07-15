@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build (static, all routes prerendered)
+        run: pnpm build
+
+      - name: Install Playwright Chromium (axe gate runner)
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Accessibility gate — axe WCAG 2.0 A/AA on all routes
+        run: node scripts/axe-check.mjs

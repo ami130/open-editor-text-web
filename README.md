@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# open-editor-web
 
-## Getting Started
+The public web platform for **Open Editor** — landing page, live playground,
+documentation, and comparison page. Fully separate from the editor monorepo
+(Phase 21 of the editor's plan); later phases add the admin panel + license
+service (Phase 23) and commerce (Phase 24) to this same project.
 
-First, run the development server:
+Built with Next.js (App Router, TypeScript, Tailwind v4), rendered fully
+static — every route is prerendered, no server code in the public site.
+
+## Routes
+
+| Route | What it is |
+|---|---|
+| `/` | Landing — live hero editor, claims, feature grid |
+| `/playground` | The centerpiece: 19 toggleable plugins, theme/locale/direction switches, and a **config reflector** that emits copy-paste code for the exact current setup |
+| `/docs` + `/docs/[slug]` | 8 documentation pages synced from the editor repo (SSG) |
+| `/compare` | Honest feature/size/license comparison vs CKEditor and Jodit, with "see it live" proof links |
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Gates (all must pass before a deploy)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm build                    # static build — must complete with all routes prerendered
+node scripts/axe-check.mjs    # accessibility gate: axe WCAG 2.0 A/AA on 5 routes,
+                              # fails on any critical/serious violation (needs a prior build)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+CI runs both (see `.github/workflows/ci.yml`).
 
-## Learn More
+## How the editor gets here (important)
 
-To learn more about Next.js, take a look at the following resources:
+- **Engine:** `@open-editor-hq/core` installed from the public npm registry.
+- **React wrapper:** vendored tarball at `vendor/` (`file:` dependency) because
+  the wrapper is unpublished until the month-end release moment.
+- **At month-end (migration, editor repo Phase 25.2):** swap the vendored
+  tarball for the published registry package and adopt the final `openeditor-*`
+  names in site copy and code samples.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Docs syncing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`scripts/sync-docs.mjs` copies the 8 markdown files from the editor repo
+(`../open-editor`) into `content/docs/`. The copies are committed — the editor
+repo stays the single source of truth; re-run the script after editing docs
+there.
 
-## Deploy on Vercel
+```bash
+node scripts/sync-docs.mjs
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Decisions log
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **2026-07-14** — one fresh Next.js project for ALL web phases (21/23/24); no
+  separate backend framework. Public site is static; server features arrive
+  with Phase 23 behind auth.
+- **2026-07-14** — live editor on the landing + playground uses the real
+  packages (registry core + packed wrapper tarball), not a copy of source —
+  the site dogfoods exactly what users install.
+- **2026-07-15** — brand/package naming pivoted to the `openeditors` family
+  (see editor repo README, Phase 25). Site copy adopts it at migration.
+
+## Deploy
+
+Static-first: any Vercel-class host works. Decisions pending: GitHub repo home,
+hosting platform, domain.
