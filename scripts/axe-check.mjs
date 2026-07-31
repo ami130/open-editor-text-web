@@ -21,7 +21,15 @@ try {
   for (const route of ROUTES) {
     await page.goto(`http://localhost:4401${route}`);
     await page.waitForTimeout(1200); // let client editors mount
-    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    // Scan OUR document only — axe otherwise descends into third-party
+    // embed iframes (e.g. the YouTube player in the playground demo content)
+    // and reports YouTube's internals as site violations. The editor's own
+    // UI is same-document, so nothing of ours is excluded by this.
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .exclude('iframe[src*="youtube"]')
+      .exclude('iframe[src*="vimeo"]')
+      .analyze();
     const critical = results.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious');
     console.log(`[axe] ${route}: ${critical.length === 0 ? 'OK' : critical.length + ' CRITICAL/SERIOUS'}`);
     for (const v of critical) {

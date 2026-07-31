@@ -1,30 +1,140 @@
 @import "tailwindcss";
 
-/* Brand: aligned to the editor's own "Modern SaaS" indigo accent. */
+/*
+ * Brand: aligned to the editor's own "Modern SaaS" indigo accent.
+ *
+ * Theme is driven by `data-theme` on <html>:
+ *   - data-theme="light" / "dark"  → user picked it (persisted in localStorage)
+ *   - attribute absent             → follow the operating system
+ * The dark token set therefore appears twice: once for the explicit choice,
+ * once for the OS fallback.
+ */
 :root {
   --brand: #4f46e5;
   --brand-hover: #4338ca;
+  /* solid fills that must hold white text in both themes */
+  --brand-solid: #4f46e5;
+  --brand-solid-hover: #4338ca;
   --ink: #10121a;
   --ink-muted: #5b6172;
   --paper: #ffffff;
   --paper-raised: #f6f7fb;
   --edge: #e5e7f0;
+  --shadow-soft: 0 1px 2px rgba(16, 18, 26, 0.05), 0 8px 24px -12px rgba(16, 18, 26, 0.12);
+  --shadow-lift: 0 2px 4px rgba(16, 18, 26, 0.06), 0 16px 32px -16px rgba(16, 18, 26, 0.18);
+  color-scheme: light;
 }
+
+:root[data-theme="dark"] {
+  --brand: #818cf8;
+  --brand-hover: #a5b4fc;
+  --brand-solid: #4f46e5;
+  --brand-solid-hover: #6366f1;
+  --ink: #eceef6;
+  --ink-muted: #9aa1b5;
+  --paper: #0b0d14;
+  --paper-raised: #141724;
+  --edge: #23273a;
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 32px -16px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --brand: #818cf8;
     --brand-hover: #a5b4fc;
+    --brand-solid: #4f46e5;
+    --brand-solid-hover: #6366f1;
     --ink: #eceef6;
     --ink-muted: #9aa1b5;
     --paper: #0b0d14;
     --paper-raised: #141724;
     --edge: #23273a;
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.45), 0 16px 32px -16px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
   }
 }
+
 body {
   background: var(--paper);
   color: var(--ink);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
+
+::selection {
+  background: color-mix(in oklab, var(--brand) 28%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Shared interactive pieces — keeps hover/transition behavior consistent
+   site-wide instead of re-declaring it inline on every element. */
+.btn-primary {
+  background: var(--brand-solid);
+  color: #fff;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  box-shadow: var(--shadow-soft);
+}
+.btn-primary:hover {
+  background: var(--brand-solid-hover);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.card {
+  border-color: var(--edge);
+  background: var(--paper);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease,
+    background-color 0.25s ease;
+}
+.card-hover:hover {
+  border-color: color-mix(in oklab, var(--brand) 45%, var(--edge));
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+.nav-link {
+  color: var(--ink-muted);
+  transition: color 0.15s ease;
+  position: relative;
+  padding: 0.25rem 0;
+}
+.nav-link:hover {
+  color: var(--ink);
+}
+.nav-link[data-active="true"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+.nav-link[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.45rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brand);
+}
+
+/* Homepage hero editor: cap and scroll ONLY the editable document. The
+   editor's maxHeight config caps the whole wrapper (toolbar and status bar
+   included) and lets content bleed out of the card — so we cap the editable
+   here instead. !important is needed to beat its inline `max-height`. */
+.hero-editor .oe-editor {
+  max-height: 440px !important;
+  overflow-y: auto;
+}
+
 .prose-docs h1 { font-size: 1.9rem; font-weight: 700; margin: 1.2em 0 .5em; letter-spacing: -0.02em; }
 .prose-docs h2 { font-size: 1.4rem; font-weight: 650; margin: 1.4em 0 .5em; border-bottom: 1px solid var(--edge); padding-bottom: .3em; }
 .prose-docs h3 { font-size: 1.15rem; font-weight: 600; margin: 1.2em 0 .4em; }
@@ -39,3 +149,16 @@ body {
 .prose-docs ul { list-style: disc; padding-left: 1.4em; }
 .prose-docs ol { list-style: decimal; padding-left: 1.4em; }
 .prose-docs blockquote { border-left: 3px solid var(--brand); padding-left: 1em; color: var(--ink-muted); margin: .8em 0; }
+
+/* Admin panel form inputs — shared style matching the site tokens. */
+.oe-input {
+  width: 100%;
+  border: 1.5px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.875rem;
+  outline: none;
+}
+.oe-input:focus { border-color: var(--brand); }

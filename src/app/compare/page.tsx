@@ -45,7 +45,7 @@ export default function ComparePage() {
           </thead>
           <tbody>
             {ROWS.map(([f, oe, ck, jd, proof]) => (
-              <tr key={f} className="border-t" style={{ borderColor: "var(--edge)" }}>
+              <tr key={f} className="border-t transition-colors hover:bg-(--paper-raised)" style={{ borderColor: "var(--edge)" }}>
                 <td className="px-4 py-2.5 font-medium">{f}</td>
                 <td className="px-4 py-2.5" style={{ color: "var(--brand)" }}>{oe}</td>
                 <td className="px-4 py-2.5" style={{ color: "var(--ink-muted)" }}>{ck}</td>

@@ -24,7 +24,7 @@ export default function DocsIndex() {
       <ul className="grid gap-4 sm:grid-cols-2">
         {DOCS.map(([slug, title, blurb]) => (
           <li key={slug}>
-            <Link href={`/docs/${slug}`} className="block h-full rounded-xl border p-5 transition hover:shadow-sm" style={{ borderColor: "var(--edge)" }}>
+            <Link href={`/docs/${slug}`} className="card card-hover block h-full rounded-xl border p-5">
               <h2 className="font-semibold" style={{ color: "var(--brand)" }}>{title}</h2>
               <p className="mt-1 text-sm" style={{ color: "var(--ink-muted)" }}>{blurb}</p>
             </Link>

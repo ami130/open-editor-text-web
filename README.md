@@ -36,12 +36,11 @@ CI runs both (see `.github/workflows/ci.yml`).
 
 ## How the editor gets here (important)
 
-- **Engine:** `@open-editor-hq/core` installed from the public npm registry.
-- **React wrapper:** vendored tarball at `vendor/` (`file:` dependency) because
-  the wrapper is unpublished until the month-end release moment.
-- **At month-end (migration, editor repo Phase 25.2):** swap the vendored
-  tarball for the published registry package and adopt the final `openeditor-*`
-  names in site copy and code samples.
+- **Engine + React wrapper:** installed from the public npm registry under the
+  final names — `openeditor-text@^1.1.0` and `openeditor-text-react@^1.1.0`
+  (published 2026-07-15; the earlier `@open-editor-hq/core` is deprecated with
+  a pointer). The site dogfoods exactly what `npx openeditors add text`
+  installs for users.
 
 ## Docs syncing
 
@@ -69,3 +68,4 @@ node scripts/sync-docs.mjs
 
 Static-first: any Vercel-class host works. Decisions pending: GitHub repo home,
 hosting platform, domain.
+# open-editor-text-web

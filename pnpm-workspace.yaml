@@ -1,8 +1,12 @@
+packages:
+  - '.'
 onlyBuiltDependencies:
   - sharp
   - unrs-resolver
 minimumReleaseAgeExclude:
   - '@open-editor-hq/core@1.1.0'
+  - openeditor-text-react@1.1.0
+  - openeditor-text@1.1.0
 allowBuilds:
   sharp: true
   unrs-resolver: true
