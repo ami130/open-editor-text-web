@@ -354,9 +354,20 @@ Ctrl/Cmd+Shift+V always pastes as plain text.
 
 ## Images & uploads
 
+> **Connecting uploads to your own API + database?** This table is the reference;
+> the step-by-step setup guide (with server examples for Node/Express, Next.js,
+> and NestJS, plus auth) lives in **[Image uploads](/docs/IMAGE-UPLOAD)**.
+
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `imageUploadUrl` | string \| null | `null` | POST endpoint for image uploads. See the contract below. |
+| `imageUploadHeaders` | object \| `(file) => object` \| null | `null` | Extra request headers — e.g. `{ Authorization: 'Bearer …' }`, an API key, `X-CSRF-Token`. **Never set `Content-Type`** (it would break the multipart boundary; it is ignored). |
+| `imageUploadWithCredentials` | boolean | `false` | Send cookies on a cross-origin upload (same-site session auth). |
+| `imageUploadFieldName` | string \| null | `null` | Override the multipart field name (default `file`) — e.g. `image`, `upload`. |
+| `imageUploadData` | object \| `(file) => object` \| null | `null` | Extra form fields sent with the file (folder id, CSRF token, post id to link the upload in your DB). |
+| `imageUploadResponse` | `(json) => url \| {url,sources?}` \| null | `null` | Map a custom server response shape to a URL (Jodit's `process()` equivalent). |
+| `imageMaxFileSize` | number | `10485760` | Max upload size in bytes (default 10 MB) — enforced on dialog, drop, and paste. |
+| `imageRequireAlt` | boolean | `false` | Require non-empty alt text before an image can be inserted (accessibility). |
 | `imageAllowDataUri` | boolean | `false` | Permit `data:` image URIs (security-relevant — off by default). |
 | `imageDefaultWidth` | number \| null | `null` | Width applied to inserted images that carry no size. |
 | `imageAvailableClasses` | `[{value,label}]` \| null | `null` | Class dropdown in the Image Properties dialog. |
@@ -389,10 +400,12 @@ a responsive `<picture>` (the `<img>` stays as fallback):
 ```
 
 Every returned URL (including each `srcset`) is scheme-checked with the same
-URL policy as any `src` — an unsafe URL rejects the whole upload. There is no
-client-side response transformer: if your API wraps the payload (e.g.
-`{ data: { url } }`), return the flat shape from the endpoint you point the
-editor at (a thin proxy route works).
+URL policy as any `src` — an unsafe URL rejects the whole upload. The common
+nested shape `{ "data": { "url": … } }` (NestJS/Laravel-style) is understood out
+of the box. For any other shape, map it with **`imageUploadResponse`** — a
+function that receives the parsed JSON and returns the URL string (or
+`{ url, sources }`); this is the equivalent of Jodit's `process()` hook. Full
+examples are in the [Image uploads guide](/docs/IMAGE-UPLOAD).
 
 **Without `imageUploadUrl`:** local files become `data:` URIs, which are
 blocked unless you opt in with `imageAllowDataUri: true`. Inserting by URL

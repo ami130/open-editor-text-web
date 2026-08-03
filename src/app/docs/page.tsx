@@ -5,6 +5,7 @@ export const metadata: Metadata = { title: "Docs — Open Editor" };
 
 const DOCS = [
   ["CONFIG", "Configuration", "Every option, its type, default, and behavior — the full reference."],
+  ["IMAGE-UPLOAD", "Image uploads", "Connect image upload to your own API & database — auth, server examples, the full setup."],
   ["THEMING", "Theming", "Light/dark/minimal/auto, CSS custom properties, runtime switching, CSP-safe injection."],
   ["THEME-TOKENS", "Theme tokens", "The complete token reference for building your own theme."],
   ["PLUGINS", "Plugin authoring", "Write, test, and publish a third-party plugin — with a fully verified worked example."],
