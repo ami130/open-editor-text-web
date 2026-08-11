@@ -16,6 +16,7 @@ your server saves the file and returns a URL, the editor inserts it.
 - [Step 4 — authentication (headers, cookies)](#step-4--authentication-headers-cookies)
 - [Step 5 — extra fields & custom field name](#step-5--extra-fields--custom-field-name)
 - [Step 6 — mapping a custom response shape](#step-6--mapping-a-custom-response-shape)
+- [Step 7 — take over the upload entirely (S3, Cloudinary, pre-signed)](#step-7--take-over-the-upload-entirely-s3-cloudinary-pre-signed-urls)
 - [Full server examples](#full-server-examples)
   - [Node / Express + Multer](#node--express--multer)
   - [Next.js Route Handler](#nextjs-route-handler)
@@ -37,6 +38,10 @@ Editor POSTs the file  ──►  YOUR API (imageUploadUrl)
                                  ▼
 Editor inserts <img src>  ◄──  { "url": "https://cdn.you/…​.webp" }
 ```
+
+Or, with [`imageUploadHandler`](#step-7--take-over-the-upload-entirely-s3-cloudinary-pre-signed-urls),
+you make the requests yourself and the file can go **straight to storage**,
+never passing through your server at all.
 
 The editor never stores the image itself — your server does. The editor only
 needs a **URL** back, which it puts into the document. That URL is what ends up
@@ -190,6 +195,67 @@ new OpenEditor('#app', {
 Return a URL **string**, or an object `{ url, sources }` for a responsive
 `<picture>`. Return `null`/throw to reject the upload.
 
+## Step 7 — take over the upload entirely (S3, Cloudinary, pre-signed URLs)
+
+Everything above assumes one shape: the editor POSTs multipart to **one URL**
+and your server stores the file. That covers most backends — but not all.
+
+It cannot express:
+
+- **S3 / R2 pre-signed uploads** — ask your API for a URL, then `PUT` the raw
+  bytes straight to storage (the file never touches your server)
+- **Cloudinary / Uploadcare signed flows** — fetch a signature, then upload
+- anything needing **two round-trips**, a different verb, or a non-multipart body
+
+For those, `imageUploadHandler` hands the whole upload to you:
+
+```js
+new OpenEditor('#app', {
+  imageUploadHandler: async (file, { signal, onProgress }) => {
+    // 1. Ask your API where to put it.
+    const { uploadUrl, publicUrl } = await fetch('/api/sign-upload', {
+      method: 'POST',
+      body: JSON.stringify({ name: file.name, type: file.type }),
+      signal,
+    }).then((r) => r.json());
+
+    // 2. Upload straight to storage — your server never sees the bytes.
+    await fetch(uploadUrl, { method: 'PUT', body: file, signal });
+    onProgress(100);
+
+    // 3. Return the public URL the editor should insert.
+    return publicUrl;
+  },
+});
+```
+
+**Return** a URL string, or `{ url, width?, height?, sources? }`. Supplying
+`width`/`height` skips the editor's own measuring round-trip — useful when your
+CDN already reports them. Return `null` to signal a cancelled upload.
+
+**`signal`** is an `AbortSignal` — pass it to your `fetch` calls so the editor's
+cancel button actually cancels. **`onProgress(percent)`** drives the progress
+bar. Both are easy to ignore and both are noticeable when missing.
+
+> `imageUploadHandler` **takes precedence over `imageUploadUrl`** when both are
+> set. The other `imageUpload*` options (headers, field name, extra data,
+> response mapping) apply to the built-in uploader only — inside a handler,
+> you are making the requests, so you control all of that directly.
+
+Errors thrown inside the handler are surfaced to the user, so a rejected upload
+reads as a real message rather than a silent no-op:
+
+```js
+imageUploadHandler: async (file) => {
+  if (file.size > 5_000_000) throw new Error('Images must be under 5 MB.');
+  // …
+},
+```
+
+Security note: the URL you return is still scheme-checked by the editor.
+`javascript:` and other unsafe schemes are rejected, so a bug in a handler
+cannot become an XSS in the document.
+
 ## Full server examples
 
 Each example: accepts the `file` field, stores it, and returns `{ url }`.
@@ -333,6 +399,7 @@ not inside the document. Inserting an image **by URL** always works regardless.
 | Option | Type | Default | Purpose |
 |---|---|---|---|
 | `imageUploadUrl` | string \| null | `null` | POST endpoint; enables server upload. |
+| `imageUploadHandler` | `(file,{signal,onProgress})=>url \| {url,…}` \| null | `null` | Take over the upload entirely (S3/Cloudinary/pre-signed). Wins over `imageUploadUrl`. |
 | `imageUploadHeaders` | object \| `(file)=>object` \| null | `null` | Auth/other request headers (never `Content-Type`). |
 | `imageUploadWithCredentials` | boolean | `false` | Send cookies cross-origin. |
 | `imageUploadFieldName` | string \| null | `null` | Multipart field name (default `file`). |

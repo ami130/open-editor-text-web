@@ -361,6 +361,7 @@ Ctrl/Cmd+Shift+V always pastes as plain text.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `imageUploadUrl` | string \| null | `null` | POST endpoint for image uploads. See the contract below. |
+| `imageUploadHandler` | `(file,{signal,onProgress})=>url \| {url,width?,height?,sources?}` \| null | `null` | Take over the upload yourself — S3/R2 pre-signed URLs, Cloudinary, or any two-step flow `imageUploadUrl` cannot express. **Wins over `imageUploadUrl`.** See [Image uploads](/docs/IMAGE-UPLOAD#step-7--take-over-the-upload-entirely-s3-cloudinary-pre-signed-urls). |
 | `imageUploadHeaders` | object \| `(file) => object` \| null | `null` | Extra request headers — e.g. `{ Authorization: 'Bearer …' }`, an API key, `X-CSRF-Token`. **Never set `Content-Type`** (it would break the multipart boundary; it is ignored). |
 | `imageUploadWithCredentials` | boolean | `false` | Send cookies on a cross-origin upload (same-site session auth). |
 | `imageUploadFieldName` | string \| null | `null` | Override the multipart field name (default `file`) — e.g. `image`, `upload`. |
