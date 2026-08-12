@@ -36,6 +36,8 @@ interface Selection {
   email: string;
   name: string;
   domains: string[];
+  /** §2.4 — the buyer's editor install id, when they supplied one. */
+  installId?: string;
 }
 
 export default function CheckoutPage() {
@@ -73,7 +75,16 @@ export default function CheckoutPage() {
           fetch("/api/public/checkout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ packageId: sel.packageId, email: sel.email, name: sel.name, domains: sel.domains }),
+            // installId is forwarded so fulfilment can arm the activation claim.
+            // Omitted entirely when blank, so a normal purchase sends exactly
+            // what it always did.
+            body: JSON.stringify({
+              packageId: sel.packageId,
+              email: sel.email,
+              name: sel.name,
+              domains: sel.domains,
+              ...(sel.installId ? { installId: sel.installId } : {}),
+            }),
           }),
         ]);
         const status = await statusRes.json().catch(() => ({}));

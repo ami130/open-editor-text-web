@@ -120,6 +120,13 @@ function CheckoutDialog({ pkg, onClose }: { pkg: PublicPackage; onClose: () => v
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [domains, setDomains] = useState("");
+  /**
+   * §2.4 activation. Optional: when the buyer pastes the install id their
+   * editor shows them, that editor upgrades ITSELF after payment instead of
+   * waiting for the emailed key to be pasted into config. Leaving it blank is a
+   * completely normal purchase — the key still arrives by email.
+   */
+  const [installId, setInstallId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,6 +135,14 @@ function CheckoutDialog({ pkg, onClose }: { pkg: PublicPackage; onClose: () => v
     if (!email.trim()) return setError("Email is required");
     const domainList = domains.split(",").map((d) => d.trim()).filter(Boolean);
     if (pkg.domainBound && domainList.length === 0) return setError("Enter the domain your license will be used on");
+    // Catch a mistyped id HERE rather than after payment: the format is fixed
+    // (`oe_` + 32 hex, see loader/src/install-id.js), and a wrong one would
+    // silently never activate, leaving the buyer to wonder why their editor
+    // stayed free.
+    const install = installId.trim();
+    if (install && !/^oe_[0-9a-f]{32}$/.test(install)) {
+      return setError("That editor ID doesn't look right. Copy it exactly, or leave it blank.");
+    }
     // Hand the selection to the EMBEDDED /checkout page via sessionStorage
     // (never a clientSecret in the URL). /checkout creates the Stripe session
     // and renders the payment form ON THIS SITE — no redirect to Stripe.
@@ -136,6 +151,7 @@ function CheckoutDialog({ pkg, onClose }: { pkg: PublicPackage; onClose: () => v
       sessionStorage.setItem("oe:checkout:selection", JSON.stringify({
         packageId: pkg.id, packageName: pkg.name,
         email: email.trim(), name: name.trim(), domains: domainList,
+        installId: install,
       }));
       window.location.href = "/checkout";
     } catch { setError("Could not start checkout."); setBusy(false); }
@@ -155,6 +171,21 @@ function CheckoutDialog({ pkg, onClose }: { pkg: PublicPackage; onClose: () => v
               <input value={domains} onChange={(e) => setDomains(e.target.value)} className="oe-input" placeholder="mysite.com" />
             </label>
           )}
+          <label className="flex flex-col gap-1 text-sm font-medium" style={{ color: "var(--ink)" }}>
+            Editor ID <span className="font-normal" style={{ color: "var(--ink-muted)" }}>(optional)</span>
+            <input
+              value={installId}
+              onChange={(e) => setInstallId(e.target.value)}
+              className="oe-input"
+              placeholder="oe_…"
+              spellCheck={false}
+              autoComplete="off"
+            />
+            <span className="text-xs font-normal" style={{ color: "var(--ink-muted)" }}>
+              Paste the ID shown in your editor and it will unlock itself right after payment.
+              Leave blank to set it up later with the key we email you.
+            </span>
+          </label>
           {error && <p role="alert" className="text-sm" style={{ color: "#b3261e" }}>{error}</p>}
           <div className="mt-1 flex gap-2">
             <button type="button" onClick={onClose} className="flex-1 rounded-lg px-4 py-2 text-sm font-medium" style={{ border: "1px solid var(--edge)", color: "var(--ink)" }}>Cancel</button>
