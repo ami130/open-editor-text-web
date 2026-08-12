@@ -11,9 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `version:` here on purpose — package.json's `packageManager` field is
+      # the single source of truth. pnpm/action-setup@v4 ERRORS when both are
+      # set, and this workflow additionally pinned 11 while package.json pins
+      # 9.15.0, so even the intended versions disagreed.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v4
         with:
