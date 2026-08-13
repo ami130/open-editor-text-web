@@ -59,8 +59,20 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Standalone output for a slim production Docker image (Phase G deploy).
-  output: "standalone",
+  /**
+   * Standalone output produces a self-contained .next/standalone/server.js for
+   * a slim Docker image (Phase G deploy). It is what the Dockerfile COPYs.
+   *
+   * ⚠️ IT MUST NOT BE SET ON VERCEL. Vercel runs Next on its own platform and
+   * expects the normal build; with `standalone` its detection falls through to
+   * "No Output Directory named 'dist' found" — an error that points nowhere
+   * near the cause and cost real time to diagnose.
+   *
+   * Vercel sets VERCEL=1 in every build, so this stays off there and on
+   * everywhere else. Docker and Railway keep the slim image; Vercel builds
+   * normally. Neither deployment target needs a config change.
+   */
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
