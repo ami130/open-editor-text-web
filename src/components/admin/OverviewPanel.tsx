@@ -4,7 +4,7 @@
  *  attention (pending orders, flagged licenses). Pulls live data from the same
  *  /api/admin/* routes the panels use; degrades gracefully if a call is gated
  *  (403) by simply omitting that stat. Clicking a card jumps to its section. */
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiGet, money, type Package, type License, type Order, type Customer } from "./types";
 import { Card, StatCard, Badge, PageHeader, Table, Th, Td, EmptyRow } from "./ui";
 import { hasPermission } from "@/lib/permissions";
@@ -19,20 +19,29 @@ export default function OverviewPanel({ permissions, onNavigate }: { permissions
   const [customers, setCustomers] = useState<Customer[] | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    // Fetch each independently; a gated/failed one just stays null (its stat hides).
-    const safe = <T,>(p: Promise<T>) => p.then((v) => v).catch(() => null);
-    const [pk, lic, ord, cust] = await Promise.all([
-      safe(apiGet<Package[]>("/api/admin/packages")),
-      safe(apiGet<License[]>("/api/admin/licenses")),
-      canOrders ? safe(apiGet<Order[]>("/api/admin/orders")) : Promise.resolve(null),
-      safe(apiGet<Customer[]>("/api/admin/customers")),
-    ]);
-    setPackages(pk); setLicenses(lic); setOrders(ord); setCustomers(cust);
-    setLoading(false);
-  }, [canOrders]);
 
-  useEffect(() => { void load(); }, [load]);
+  /**
+   * A `cancelled` guard rather than calling load() directly: setState must not
+   * run after unmount, and react-hooks/set-state-in-effect flags the direct
+   * form because a synchronous setState inside an effect causes a cascading
+   * render. Same fix as DefaultPackageCard.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const safe = <T,>(pr: Promise<T>) => pr.then((v) => v).catch(() => null);
+      const [pk, lic, ord, cust] = await Promise.all([
+        safe(apiGet<Package[]>("/api/admin/packages")),
+        safe(apiGet<License[]>("/api/admin/licenses")),
+        canOrders ? safe(apiGet<Order[]>("/api/admin/orders")) : Promise.resolve(null),
+        safe(apiGet<Customer[]>("/api/admin/customers")),
+      ]);
+      if (cancelled) return;
+      setPackages(pk); setLicenses(lic); setOrders(ord); setCustomers(cust);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [canOrders]);
 
   // Derived stats.
   const activeLicenses = licenses?.filter((l) => (l.effectiveStatus || l.status) === "active").length ?? 0;

@@ -16,6 +16,29 @@ function formatDate(unixSeconds: number): string {
   catch { return "—"; }
 }
 
+/**
+ * Defined at MODULE scope, not inside LicensesPanel.
+ *
+ * As a nested component it was a NEW component type on every render, so React
+ * unmounted and remounted it each time the panel re-rendered — discarding the
+ * <textarea>'s DOM state. That is a real, user-visible bug in a box holding a
+ * licence key the admin is told is "shown once": selection and scroll position
+ * were lost whenever anything else on the panel changed.
+ *
+ * react-hooks/static-components flagged exactly this.
+ */
+function KeyReveal({ token }: { token: string }) {
+  return (
+    <Card className="mt-1" style={{ background: "color-mix(in oklab, var(--brand) 6%, var(--paper))" }}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium" style={{ color: "var(--ink)" }}>License key (copy now — shown once):</p>
+        <CopyButton value={token} label="Copy key" />
+      </div>
+      <textarea readOnly value={token} rows={4} className="oe-input mt-1.5 font-mono text-[11px]" onFocus={(e) => e.currentTarget.select()} />
+    </Card>
+  );
+}
+
 export default function LicensesPanel() {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -166,16 +189,6 @@ export default function LicensesPanel() {
   if (error) return <ErrorBox message={error} onRetry={reload} />;
 
   const statusTone = (s: string) => (s === "active" ? "good" : s === "expired" ? "warn" : "bad");
-
-  const KeyReveal = ({ token }: { token: string }) => (
-    <Card className="mt-1" style={{ background: "color-mix(in oklab, var(--brand) 6%, var(--paper))" }}>
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium" style={{ color: "var(--ink)" }}>License key (copy now — shown once):</p>
-        <CopyButton value={token} label="Copy key" />
-      </div>
-      <textarea readOnly value={token} rows={4} className="oe-input mt-1.5 font-mono text-[11px]" onFocus={(e) => e.currentTarget.select()} />
-    </Card>
-  );
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
