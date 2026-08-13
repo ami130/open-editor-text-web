@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete, money, type Feature, type Package } from "./types";
 import EditPackageDialog from "./EditPackageDialog";
+import DefaultPackageCard from "./DefaultPackageCard";
 import { useToasts, PageHeader, Card, Badge, Button } from "./ui";
 
 /** "Core basics" preset — a sane always-usable baseline so an admin doesn't
@@ -183,6 +184,14 @@ export default function PackagesPanel() {
       {/* existing packages */}
       <section>
         <PageHeader title="Packages" subtitle={`${packages.length} package${packages.length === 1 ? "" : "s"}`} />
+
+        {/*
+          The free tier sits ABOVE the package list on purpose: it is the only
+          setting here that affects people who have not bought anything — every
+          anonymous editor loading from this backend — so it should not look
+          like a per-row detail.
+        */}
+        <DefaultPackageCard packages={packages} onChanged={() => void reload()} />
         {packages.length === 0 && <Card><p className="text-center text-sm" style={{ color: "var(--ink-muted)" }}>No packages yet — create one on the right.</p></Card>}
         <div className="flex flex-col gap-3">
           {packages.map((p) => {
