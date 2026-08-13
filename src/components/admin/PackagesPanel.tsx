@@ -38,6 +38,18 @@ export default function PackagesPanel() {
   const [interval, setInterval] = useState("once");
   const [isFree, setIsFree] = useState(false);
   const [publiclyListed, setPubliclyListed] = useState(false);
+  /**
+   * LICENCE PROTECTION — three settings that existed only as backend defaults.
+   * Without inputs here an admin could not turn them on at all, so the seat cap
+   * (§2.4) was unreachable and every package silently allowed unlimited domains
+   * and unlimited machines.
+   *
+   * Defaults mirror the backend exactly (domainBound true, caps 0 = unlimited)
+   * so adding the UI changes nothing for existing behaviour.
+   */
+  const [domainBound, setDomainBound] = useState(true);
+  const [maxDomains, setMaxDomains] = useState("0");
+  const [maxInstalls, setMaxInstalls] = useState("0");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -124,9 +136,14 @@ export default function PackagesPanel() {
       await apiPost("/api/admin/packages", {
         name: name.trim(), priceCents: cents, // currency is USD-only (server-enforced)
         billingInterval: interval, isFree, publiclyListed, featureIds: [...picked],
+        // Licence protection. 0 = unlimited on both caps, matching the backend.
+        domainBound,
+        maxDomains: Math.max(0, parseInt(maxDomains, 10) || 0),
+        maxInstalls: Math.max(0, parseInt(maxInstalls, 10) || 0),
         // server enforces isFree ⇒ price 0 + interval once; the UI mirrors it below.
       });
       setName(""); setPrice("49.00"); setInterval("once"); setIsFree(false); setPicked(new Set()); setPubliclyListed(false);
+      setDomainBound(true); setMaxDomains("0"); setMaxInstalls("0");
       notify("success", "Package created.");
       await load();
     } catch (e) { setFormError((e as Error).message); }
@@ -281,6 +298,58 @@ export default function PackagesPanel() {
               <option value="once">One-time</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="lifetime">Lifetime</option>
             </select>
           </Field>
+          {/*
+            LICENCE PROTECTION — grouped and labelled in plain language.
+
+            These three had no UI at all, so every package silently took the
+            backend defaults: domain binding always on, and BOTH caps unlimited.
+            That made the §2.4 seat cap unreachable — the protection existed and
+            no admin could switch it on.
+
+            Wording is deliberately about consequences ("one payment, one site")
+            rather than field names, because the person choosing these is making
+            a commercial decision, not a technical one.
+          */}
+          <fieldset className="flex flex-col gap-2.5 rounded-md p-3" style={{ border: "1px solid var(--edge)" }}>
+            <legend className="px-1 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--ink-muted)" }}>
+              Licence protection
+            </legend>
+
+            <label className="flex items-start gap-2 text-sm font-medium" style={{ color: "var(--ink)" }}>
+              <input type="checkbox" checked={domainBound} onChange={(e) => setDomainBound(e.target.checked)} className="mt-0.5" />
+              <span>
+                Lock to the buyer&apos;s website
+                <span className="block font-normal" style={{ color: "var(--ink-muted)" }}>
+                  They enter their domain at checkout and the key only works there.
+                  Turn OFF and the key works on any site — including one they resell it to.
+                </span>
+              </span>
+            </label>
+
+            <Field label="Domains allowed">
+              <input
+                value={maxDomains} onChange={(e) => setMaxDomains(e.target.value)}
+                className="oe-input" inputMode="numeric" disabled={!domainBound}
+              />
+              <span className="mt-0.5 block text-xs" style={{ color: "var(--ink-muted)" }}>
+                0 = unlimited. Use 1 for &ldquo;one payment, one site&rdquo;.
+                {!domainBound && " (Not used while the domain lock is off.)"}
+              </span>
+            </Field>
+
+            <Field label="Devices allowed">
+              <input
+                value={maxInstalls} onChange={(e) => setMaxInstalls(e.target.value)}
+                className="oe-input" inputMode="numeric"
+              />
+              <span className="mt-0.5 block text-xs" style={{ color: "var(--ink-muted)" }}>
+                0 = unlimited. Counts distinct browsers, so 3&ndash;5 covers a normal
+                team while a key shared in a group chat stops working. A device that
+                already worked is never cut off.
+              </span>
+            </Field>
+          </fieldset>
+
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium" style={{ color: "var(--ink)" }}>
