@@ -47,6 +47,20 @@ export default function PricingPage() {
     return () => { active = false; };
   }, [load]);
 
+  /**
+   * How many features the FREE plan carries, read from the free package itself
+   * rather than hard-coded — a literal here would silently rot the next time
+   * the engine's feature set changes.
+   *
+   * Paid packages are stored as only what they ADD (Pro is literally
+   * export.pdf + export.docx). The delivery API unions the free baseline in at
+   * runtime, so a Pro licence really does grant all of them — but a card
+   * listing the raw package reads "Pro · 2 features" next to "Free · 53",
+   * which looks like a downgrade. Used below to say "Everything in Free, plus:"
+   * only when there is a free plan for that to refer to.
+   */
+  const freeFeatureCount = packages.find((p) => p.priceCents === 0)?.features.length ?? 0;
+
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
       <header className="mb-10 text-center">
@@ -97,7 +111,18 @@ export default function PricingPage() {
                 One-time payment for {p.billingInterval === "monthly" ? "30 days" : "1 year"} of access · no auto-renewal · re-purchase anytime
               </p>
             )}
-            <ul className="mt-4 flex flex-1 flex-col gap-1.5 text-sm" style={{ color: "var(--ink)" }}>
+            {/* A paid package usually lists only what it ADDS — Pro is stored as
+                just export.pdf + export.docx. At runtime the free tier is
+                unioned in, so a Pro licence really grants all 55 features; but
+                listing the raw package made the card read "Pro · 2 features"
+                beside "Free · 53", which reads as a downgrade. Say what the
+                buyer actually gets. */}
+            {!!freeFeatureCount && p.priceCents > 0 && (
+              <p className="mt-4 text-sm font-medium" style={{ color: "var(--ink)" }}>
+                Everything in Free, plus:
+              </p>
+            )}
+            <ul className={`${!!freeFeatureCount && p.priceCents > 0 ? "mt-2" : "mt-4"} flex flex-1 flex-col gap-1.5 text-sm`} style={{ color: "var(--ink)" }}>
               {p.features.map((f) => (
                 <li key={f.id} className="flex items-center gap-2">
                   <span aria-hidden style={{ color: "var(--brand)" }}>✓</span> {f.title}
