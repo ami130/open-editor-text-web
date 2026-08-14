@@ -8,6 +8,7 @@
  * tokens. The backend owns the price; this page never sends an amount.
  */
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 
 interface PublicPackage {
   id: string; name: string; description: string; priceCents: number; currency: string;
@@ -70,13 +71,15 @@ export default function PricingPage() {
             <h2 className="text-lg font-semibold" style={{ color: "var(--ink)" }}>{p.name}</h2>
             {p.description && <p className="mt-1 text-sm" style={{ color: "var(--ink-muted)" }}>{p.description}</p>}
             <div className="mt-4 text-3xl font-bold" style={{ color: "var(--ink)" }}>
-              {money(p.priceCents, p.currency)}
+              {p.priceCents === 0 ? "Free" : money(p.priceCents, p.currency)}
               <span className="ml-1 text-sm font-normal" style={{ color: "var(--ink-muted)" }}>
                 {/* Billing is a ONE-TIME charge for a fixed ACCESS WINDOW — NOT a
                     recurring subscription (audit B2). "monthly"/"yearly" therefore
                     read as "30-day / 1-year access", never "/ month" (which implies
                     an auto-charge that never happens and would drive chargebacks). */}
-                {p.billingInterval === "once"
+                {p.priceCents === 0
+                  ? "no card, no signup"
+                  : p.billingInterval === "once"
                   ? "one-time"
                   : p.billingInterval === "lifetime"
                     ? "lifetime"
@@ -101,17 +104,40 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <button
-              onClick={() => setSelected(p)} disabled={!billingEnabled}
-              className="btn-primary mt-6 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-            >
-              {billingEnabled ? "Buy now" : "Coming soon"}
-            </button>
+            {/* A free package is NOT bought. The backend refuses a zero-price
+                checkout outright ("this package has no purchasable price"), so
+                routing free through the buy flow would hand the visitor a
+                button that can only ever 400. It also misrepresents the
+                product: the free tier needs no card, no signup and no licence
+                key — you install the package and it works. So free gets a link
+                to the docs instead of a purchase dialog. */}
+            {p.priceCents === 0 ? (
+              <Link
+                href="/docs"
+                className="btn-primary mt-6 rounded-lg px-4 py-2.5 text-center text-sm font-medium"
+              >
+                Get started
+              </Link>
+            ) : (
+              <button
+                onClick={() => setSelected(p)} disabled={!billingEnabled}
+                className="btn-primary mt-6 rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+              >
+                {billingEnabled ? "Buy now" : "Coming soon"}
+              </button>
+            )}
           </div>
         ))}
       </div>
 
-      {selected && <CheckoutDialog pkg={selected} onClose={() => setSelected(null)} />}
+      {/* `priceCents > 0` is defence in depth, not redundancy: the free card
+          renders a link rather than a button, but nothing else stops `selected`
+          being set to a free package later (a new entry point, a keyboard path,
+          a refactor). The backend would reject that checkout anyway — this just
+          means the visitor never sees a payment form that cannot succeed. */}
+      {selected && selected.priceCents > 0 && (
+        <CheckoutDialog pkg={selected} onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 }
