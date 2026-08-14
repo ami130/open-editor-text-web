@@ -187,6 +187,36 @@ export default function DefaultPackageCard({
                 {currentPkg ? ` instead of ${currentPkg.features.length}` : ""}. This applies
                 immediately, to everyone, with no deploy.
               </p>
+              {/* A REDUCTION is the dangerous direction, and the sentence above
+                  states it as a neutral fact ("7 instead of 53") that is easy to
+                  skim past. Losing features is what an existing free user will
+                  actually notice — and since the engine now honours the package
+                  exactly, those toolbar buttons DISAPPEAR rather than merely
+                  refusing to act. Say so, and name what goes. */}
+              {currentPkg && pickedPkg && pickedPkg.features.length < currentPkg.features.length && (
+                <div
+                  className="mt-3 rounded-md px-3 py-2 text-sm"
+                  style={{ background: "color-mix(in oklab, #b3261e 10%, transparent)", color: "var(--ink)" }}
+                >
+                  <strong>
+                    This REMOVES {currentPkg.features.length - pickedPkg.features.length} feature
+                    {currentPkg.features.length - pickedPkg.features.length === 1 ? "" : "s"} from
+                    every existing free user.
+                  </strong>{" "}
+                  Their toolbar buttons disappear on next page load — they are not
+                  merely disabled.
+                  {(() => {
+                    const keep = new Set(pickedPkg.features.map((f) => f.id));
+                    const lost = currentPkg.features.filter((f) => !keep.has(f.id));
+                    return lost.length ? (
+                      <span>
+                        {" "}Losing: {lost.slice(0, 6).map((f) => f.title || f.id).join(", ")}
+                        {lost.length > 6 ? ` and ${lost.length - 6} more` : ""}.
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+              )}
               <div className="mt-3 flex gap-2">
                 <Button variant="primary" size="sm" disabled={saving} onClick={apply}>
                   {saving ? "Applying…" : "Yes, change it"}
