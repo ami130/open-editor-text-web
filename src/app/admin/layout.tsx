@@ -7,13 +7,43 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/dal";
 import LogoutButton from "@/components/LogoutButton";
+import EnvironmentBanner from "@/components/EnvironmentBanner";
+import { BACKEND_URL } from "@/lib/config";
+
+/**
+ * Ask the backend which environment it is (Phase 4).
+ *
+ * Deliberately NOT read from this app's own env: the question is "which
+ * backend am I editing?", and only that backend can answer it honestly. A
+ * frontend-side label would keep saying "production" while pointed at staging,
+ * which is the exact failure this banner exists to prevent.
+ *
+ * Never throws — an admin panel must still render when /health is down, and an
+ * unreachable backend is surfaced by the banner rather than as a crash.
+ */
+async function fetchEnvironment() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/health`, { cache: "no-store" });
+    if (!res.ok) return { environment: null, unreachable: true };
+    const body = await res.json();
+    return { environment: body?.environment ?? null, unreachable: false };
+  } catch {
+    return { environment: null, unreachable: true };
+  }
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin();
+  const { environment, unreachable } = await fetchEnvironment();
   return (
     <div className="mx-auto max-w-7xl px-5 py-8">
+      <EnvironmentBanner
+        environment={environment}
+        host={new URL(BACKEND_URL).host}
+        unreachable={unreachable}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3 pb-6">
         <div className="flex items-center gap-3">
           <span
