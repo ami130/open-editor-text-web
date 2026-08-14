@@ -30,9 +30,32 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV !== "production";
 // Stripe.js is served from js.stripe.com; embedded checkout iframes render the
 // card fields from js.stripe.com / *.stripe.com; Stripe.js calls api.stripe.com.
+// `blob:` is required by the v2 loader, which evaluates the SHA-256-verified
+// engine bundle as a blob module (T22). It does NOT widen the origin surface:
+// a blob: URL can only be created by this page's own already-trusted script,
+// and the bytes inside it were digest-checked before they got here.
 const scriptSrc = isDev
-  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com"
-  : "script-src 'self' 'unsafe-inline' https://js.stripe.com";
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com"
+  : "script-src 'self' 'unsafe-inline' blob: https://js.stripe.com";
+
+/**
+ * The runtime-delivery origin (/demo).
+ *
+ * The v2 loader fetches the engine from the delivery API and executes it, so
+ * TWO directives must admit that origin or the demo cannot work at all:
+ *  - `connect-src`, for POST /delivery/session and the bundle download;
+ *  - `script-src`, because the verified bundle is evaluated as a module.
+ *
+ * The loader creates that module from a blob: URL — measured as the only
+ * approach viable under a strict CSP (decision T22) — which is why `blob:`
+ * appears in script-src rather than the delivery host alone.
+ *
+ * Overridable so a preview deployment can point at a staging backend without
+ * editing this file; the default is production.
+ */
+const DELIVERY_ORIGIN =
+  process.env.NEXT_PUBLIC_DELIVERY_ENDPOINT
+  || "https://open-editor-text-backend-production.up.railway.app";
 
 const csp = [
   "default-src 'self'",
@@ -43,8 +66,12 @@ const csp = [
   "img-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   scriptSrc,
-  "frame-src https://js.stripe.com https://*.stripe.com",
-  "connect-src 'self' https://api.stripe.com https://js.stripe.com",
+  // youtube-nocookie: the hero and playground demo content include a real
+  // embedded video, to show the media plugin working rather than describing it.
+  // Without this the browser blocks the iframe and the demo shows a hole.
+  // The privacy-preserving domain, deliberately — it sets no tracking cookie.
+  "frame-src https://js.stripe.com https://*.stripe.com https://www.youtube-nocookie.com",
+  `connect-src 'self' https://api.stripe.com https://js.stripe.com ${DELIVERY_ORIGIN}`,
   "font-src 'self' data:",
 ].join("; ");
 
@@ -73,6 +100,19 @@ const nextConfig: NextConfig = {
    * normally. Neither deployment target needs a config change.
    */
   ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
+  /**
+   * The v1 engine probes for its private premium plugins with dynamic imports
+   * that are already wrapped in try/catch, so an absent package is harmless at
+   * runtime. Turbopack resolves those specifiers statically and fails the build
+   * anyway, so they are pointed at a local stub. See src/lib/premium-absent.ts
+   * for why the stub is empty and why v2 is unaffected.
+   */
+  turbopack: {
+    resolveAlias: {
+      "@openeditor-premium/export-pdf": "./src/lib/premium-absent.ts",
+      "@openeditor-premium/export-docx": "./src/lib/premium-absent.ts",
+    },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

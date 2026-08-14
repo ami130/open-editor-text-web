@@ -1,14 +1,19 @@
 "use client";
 /**
- * The landing hero: a REAL editor, dogfooding openeditor-text-react.
+ * The landing hero: a REAL editor running the v1 engine.
  */
+// ⚠️ Imports the v1 ALIAS on purpose. This page showcases INDIVIDUAL plugin
+// factories and locale packs, which v2 does not export — in v2 the engine
+// (and its plugins) is fetched at runtime, so there is nothing to import.
+// The v2 experience lives on /demo instead. See package.json:
+//   "openeditor-text-v1": "npm:openeditor-text@1.2.0"
 import { useState } from "react";
-import { OpenEditor } from "openeditor-text-react";
+import V1Editor from "./V1Editor";
 import {
   createImagePlugin, createLinkPlugin, createTablePlugin, createMediaPlugin,
   createTodoListPlugin, createSlashCommandPlugin, createAutoformatPlugin,
   createEmojiPlugin, createCodeBlockPlugin,
-} from "openeditor-text";
+} from "openeditor-text-v1";
 import { useSiteTheme } from "./useSiteTheme";
 import { HERO_CONTENT } from "./demoContent";
 
@@ -31,7 +36,7 @@ export default function HeroEditor() {
       <div className="px-3 py-2 text-xs" style={{ color: "var(--ink-muted)" }}>
         live — this is the actual npm package, not a video. Scroll it: images, tables, embeds…
       </div>
-      <OpenEditor value={HERO_CONTENT} theme={theme} plugins={plugins} />
+      <V1Editor value={HERO_CONTENT} theme={theme} plugins={plugins} />
     </div>
   );
 }

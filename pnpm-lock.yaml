@@ -18,11 +18,11 @@ importers:
         specifier: 16.2.10
         version: 16.2.10(@babel/core@7.29.7)(@playwright/test@1.61.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       openeditor-text:
-        specifier: ^1.1.0
-        version: 1.1.0
-      openeditor-text-react:
-        specifier: ^1.1.0
-        version: 1.1.0(openeditor-text@1.1.0)(react@19.2.4)
+        specifier: ^2.0.1
+        version: 2.0.1(react@19.2.4)
+      openeditor-text-v1:
+        specifier: npm:openeditor-text@1.2.0
+        version: openeditor-text@1.2.0
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -2217,14 +2217,27 @@ packages:
     resolution: {integrity: sha512-gXah6aZrcUxjWg2zR2MwouP2eHlCBzdV4pygudehaKXSGW4v2AsRQUK+lwwXhii6KFZcunEnmSUoYp5CXibxtA==}
     engines: {node: '>= 0.4'}
 
-  openeditor-text-react@1.1.0:
-    resolution: {integrity: sha512-yqE6+OJQoaYaVr2eN7MIaK9U2Vy/E6PV0V1SXUqeZ8oEU6i1idpBJ2r1UXsNoPQ/ctWO+VuDB8JTqBbpok7BzQ==}
-    peerDependencies:
-      openeditor-text: '>=1.1.0'
-      react: '>=18'
+  openeditor-text@1.2.0:
+    resolution: {integrity: sha512-zC42ik+3kHe3jgwHpRPZKQml2KminEZe+7lQO3fKczBQHZUmb4s+/EqnBPDH+Il7mJCPRdpg4te7HnwD7MXuIA==}
+    engines: {node: '>=18'}
 
-  openeditor-text@1.1.0:
-    resolution: {integrity: sha512-AleWybOB61uVPFAAIXe2VlEdxVuhYMApzxmVxE6cPSNiWDOPEpPfibnwG2G2SRZ7TjPUwwb9r2pQZrkhxD96Ug==}
+  openeditor-text@2.0.1:
+    resolution: {integrity: sha512-UhgIAOH4nx3/D60hltq7XHKEarr5advp7MxURxu9jcGd2fhJYF3zH5SrjHnM20ySgzQsm3LzAQY6WUK/MitFkQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@angular/core': '>=17'
+      '@angular/forms': '>=17'
+      react: '>=18'
+      vue: '>=3.3'
+    peerDependenciesMeta:
+      '@angular/core':
+        optional: true
+      '@angular/forms':
+        optional: true
+      react:
+        optional: true
+      vue:
+        optional: true
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -5156,12 +5169,11 @@ snapshots:
       define-properties: 1.2.1
       es-object-atoms: 1.1.2
 
-  openeditor-text-react@1.1.0(openeditor-text@1.1.0)(react@19.2.4):
-    dependencies:
-      openeditor-text: 1.1.0
-      react: 19.2.4
+  openeditor-text@1.2.0: {}
 
-  openeditor-text@1.1.0: {}
+  openeditor-text@2.0.1(react@19.2.4):
+    optionalDependencies:
+      react: 19.2.4
 
   optionator@0.9.4:
     dependencies:

@@ -4,6 +4,11 @@
  * choices, with the CONFIG REFLECTOR: the exact copy-paste code for whatever
  * is currently toggled. (No competitor demo has this.)
  */
+// ⚠️ Imports the v1 ALIAS on purpose. This page showcases INDIVIDUAL plugin
+// factories and locale packs, which v2 does not export — in v2 the engine
+// (and its plugins) is fetched at runtime, so there is nothing to import.
+// The v2 experience lives on /demo instead. See package.json:
+//   "openeditor-text-v1": "npm:openeditor-text@1.2.0"
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   OpenEditor,
@@ -14,7 +19,7 @@ import {
   createPreviewPlugin, createSpellcheckPlugin, createResizeEditorPlugin,
   createSlashCommandPlugin, createAutoformatPlugin, createMentionsPlugin,
   createBlockDragPlugin, createTodoListPlugin, createBookmarkPlugin,
-} from "openeditor-text";
+} from "openeditor-text-v1";
 import { useSiteTheme } from "./useSiteTheme";
 import { PLAYGROUND_CONTENT } from "./demoContent";
 import { buildReflectorCode, FRAMEWORK_TABS, type Framework } from "./reflectorCode";
