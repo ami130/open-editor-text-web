@@ -8,6 +8,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/dal";
 import LogoutButton from "@/components/LogoutButton";
 import EnvironmentBanner from "@/components/EnvironmentBanner";
+import EnvironmentMarker from "@/components/EnvironmentMarker";
 import { BACKEND_URL } from "@/lib/config";
 
 /**
@@ -39,6 +40,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { environment, unreachable } = await fetchEnvironment();
   return (
     <div className="mx-auto max-w-7xl px-5 py-8">
+      {/* Publishes the environment on <body> so client-side panels can name it
+          in destructive-action confirmations without each one re-fetching. */}
+      <EnvironmentMarker
+        name={environment?.name ?? ""}
+        host={new URL(BACKEND_URL).host}
+        kid={environment?.kid ?? ""}
+      />
       <EnvironmentBanner
         environment={environment}
         host={new URL(BACKEND_URL).host}

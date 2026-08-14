@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete, type Permission, type Role } from "./types";
 import { ErrorBox } from "./PackagesPanel";
-import { PageHeader, Card, Badge, Button } from "./ui";
+import { PageHeader, Card, Badge, Button, confirmAction } from "./ui";
 
 export default function RolesPanel({ canManage }: { canManage: boolean }) {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -81,7 +81,7 @@ export default function RolesPanel({ canManage }: { canManage: boolean }) {
   }
 
   async function remove(role: Role) {
-    if (!confirm(`Delete role “${role.name}”? This cannot be undone.`)) return;
+    if (!confirmAction(`Delete role “${role.name}”? This cannot be undone.`)) return;
     setBusyId(role.id); setRowError(null);
     try { await apiDelete(`/api/admin/roles/${role.id}`); if (editingId === role.id) startNew(); await load(); }
     catch (e) { setRowError((e as Error).message); }

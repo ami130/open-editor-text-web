@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete, type AdminUser, type Role } from "./types";
 import { ErrorBox } from "./PackagesPanel";
-import { PageHeader, Card, Badge, Button } from "./ui";
+import { PageHeader, Card, Badge, Button, confirmAction } from "./ui";
 
 export default function UsersPanel({ canManage }: { canManage: boolean }) {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -79,7 +79,7 @@ export default function UsersPanel({ canManage }: { canManage: boolean }) {
   }
 
   async function remove(u: AdminUser) {
-    if (!confirm(`Delete admin user “${u.email}”? This cannot be undone.`)) return;
+    if (!confirmAction(`Delete admin user “${u.email}”? This cannot be undone.`)) return;
     setBusyId(u.id); setRowError(null);
     try { await apiDelete(`/api/admin/users/${u.id}`); if (editingId === u.id) startNew(); await load(); }
     catch (e) { setRowError((e as Error).message); }

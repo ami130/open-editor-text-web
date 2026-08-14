@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete, money, type Feature, type Package } from "./types";
 import EditPackageDialog from "./EditPackageDialog";
 import DefaultPackageCard from "./DefaultPackageCard";
-import { useToasts, PageHeader, Card, Badge, Button } from "./ui";
+import { useToasts, PageHeader, Card, Badge, Button, confirmAction } from "./ui";
 
 /** "Core basics" preset — a sane always-usable baseline so an admin doesn't
  *  accidentally ship a near-empty editor. Ids match the unified catalog; any
@@ -181,7 +181,7 @@ export default function PackagesPanel() {
   }
 
   async function removePackage(pkg: Package) {
-    if (!window.confirm(`Delete package "${pkg.name}"? This cannot be undone. Existing licenses issued from it are unaffected.`)) return;
+    if (!confirmAction(`Delete package "${pkg.name}"? This cannot be undone. Existing licenses issued from it are unaffected.`)) return;
     setBusy(pkg.id, true); setRowErr(pkg.id, null);
     try {
       await apiDelete(`/api/admin/packages/${pkg.id}`);

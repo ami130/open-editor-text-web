@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiGet, apiPost, money, type Order } from "./types";
 import { ErrorBox } from "./PackagesPanel";
-import { PageHeader, Table, Th, Td, EmptyRow, Badge, Button, useToasts } from "./ui";
+import { PageHeader, Table, Th, Td, EmptyRow, Badge, Button, useToasts, confirmAction } from "./ui";
 
 const STATUS_OPTIONS = ["", "pending", "fulfilled", "failed", "expired"] as const;
 
@@ -51,7 +51,7 @@ export default function OrdersPanel() {
   }
 
   async function forceFulfill(o: Order) {
-    if (!window.confirm(`Force-fulfill this order for ${o.customerEmail}? It retrieves the Stripe session, and only mints if Stripe confirms it was PAID.`)) return;
+    if (!confirmAction(`Force-fulfill this order for ${o.customerEmail}? It retrieves the Stripe session, and only mints if Stripe confirms it was PAID.`)) return;
     setBusyId(o.id);
     try {
       await apiPost(`/api/admin/orders/${o.id}/force-fulfill`);

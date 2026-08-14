@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete, type Customer } from "./types";
 import { ErrorBox } from "./PackagesPanel";
-import { PageHeader, Card, Table, Th, Td, EmptyRow, Button, useToasts } from "./ui";
+import { PageHeader, Card, Table, Th, Td, EmptyRow, Button, useToasts, confirmAction } from "./ui";
 
 export default function CustomersPanel() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -96,7 +96,7 @@ export default function CustomersPanel() {
   }
 
   async function removeCustomer(c: Customer) {
-    if (!window.confirm(`Delete customer "${c.name}" (${c.email})? This does not delete their licenses/orders.`)) return;
+    if (!confirmAction(`Delete customer "${c.name}" (${c.email})? This does not delete their licenses/orders.`)) return;
     setBusy(c.id, true); setRowErr(c.id, null);
     try {
       await apiDelete(`/api/admin/customers/${c.id}`);

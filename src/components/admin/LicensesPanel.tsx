@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiGet, apiPost, type Customer, type License, type Package } from "./types";
 import { ErrorBox } from "./PackagesPanel";
-import { CopyButton, PageHeader, Card, Badge, Button, useToasts } from "./ui";
+import { CopyButton, PageHeader, Card, Badge, Button, useToasts, confirmAction } from "./ui";
 
 const STATUS_OPTIONS = ["", "active", "expired", "revoked"] as const;
 
@@ -40,6 +40,16 @@ function KeyReveal({ token }: { token: string }) {
 }
 
 export default function LicensesPanel() {
+  /**
+   * The signing key of the backend currently in use, published on <body> by
+   * the admin layout. Read once here so the list can flag a licence issued by
+   * a DIFFERENT environment — such a licence verifies against nothing and
+   * silently resolves to the free tier.
+   *
+   * Empty when the backend does not report one; the badge then stays hidden
+   * rather than accusing every licence of a mismatch it cannot confirm.
+   */
+  const backendKid = typeof document !== "undefined" ? (document.body?.dataset?.oeKid || "") : "";
   const [licenses, setLicenses] = useState<License[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -115,7 +125,7 @@ export default function LicensesPanel() {
     // Revoke permanently kills a working license — confirm, like regenerate/rebind
     // do (this is the most destructive single action an admin can take).
     const who = l.customer?.name || l.customer?.email || "this customer";
-    if (!window.confirm(`Revoke the license for ${who}? It stops working and CANNOT be un-revoked — the customer would need a brand-new license. Continue?`)) return;
+    if (!confirmAction(`Revoke the license for ${who}? It stops working and CANNOT be un-revoked — the customer would need a brand-new license. Continue?`)) return;
     setBusyId(l.id); setRowErr(l.id, null);
     try { await apiPost(`/api/admin/licenses/${l.id}/revoke`); notify("success", "License revoked."); await load(search, status); }
     catch (e) { const msg = (e as Error).message; setRowErr(l.id, msg); notify("error", `Revoke failed: ${msg}`); }
@@ -153,7 +163,7 @@ export default function LicensesPanel() {
   }
 
   async function regenerate(l: License) {
-    if (!window.confirm(`Regenerate the license for ${l.customer?.name || l.customer?.email}? The OLD license (#${l.id}) will be revoked immediately and can never be used again.`)) return;
+    if (!confirmAction(`Regenerate the license for ${l.customer?.name || l.customer?.email}? The OLD license (#${l.id}) will be revoked immediately and can never be used again.`)) return;
     setBusyId(l.id); setRowErr(l.id, null); setRegeneratedToken(null);
     try {
       const fresh = await apiPost<License>(`/api/admin/licenses/${l.id}/regenerate`);
@@ -226,6 +236,14 @@ export default function LicensesPanel() {
                       <span className="text-sm" style={{ color: "var(--ink-muted)" }}>· {l.planName}</span>
                       <Badge tone={statusTone(l.effectiveStatus)}>{l.effectiveStatus}</Badge>
                       {l.flaggedAt ? <Badge tone="bad">⚠ possible sharing</Badge> : null}
+                      {/* Phase 4b — a licence signed by ANOTHER environment's key
+                          cannot verify against this one's bundles; it silently
+                          resolves to free. Shown only when it MISMATCHES, so the
+                          normal case stays uncluttered and the badge keeps
+                          meaning something. */}
+                      {l.kid && backendKid && l.kid !== backendKid ? (
+                        <Badge tone="bad">⚠ signed by {l.kid}, not {backendKid}</Badge>
+                      ) : null}
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {l.features.map((f) => (

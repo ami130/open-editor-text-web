@@ -36,6 +36,13 @@ export interface License {
   /** Phase 5c anti-sharing soft flag: unix seconds it tripped (0 = not flagged) +
    *  a human-readable reason. Flagged licenses KEEP WORKING; admin reviews/dismisses. */
   flaggedAt?: number; flagReason?: string;
+  /**
+   * WHICH key signed this licence (Phase 4b). A licence issued by one
+   * environment cannot verify against a bundle carrying another's keyring — it
+   * silently resolves to the free tier, which has already happened here. Shown
+   * in the list, flagged when it does not match the backend in use.
+   */
+  kid?: string;
 }
 
 /** GET/POST helpers that throw a readable Error on non-2xx. */

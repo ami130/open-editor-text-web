@@ -211,3 +211,40 @@ export function useToasts() {
 
   return { notify, ToastHost };
 }
+
+/* ── Destructive-action confirmation ───────────────────────────────────── */
+
+/**
+ * Confirm a destructive action, naming the environment it will happen in.
+ *
+ * ─── WHY ────────────────────────────────────────────────────────────────
+ * The banner at the top of the admin page says which backend you are on. The
+ * confirm dialog is where the mistake actually happens — you are looking at
+ * the dialog, not at the banner, at the moment you decide. Revoking a licence
+ * or deleting a package on the wrong backend is unrecoverable in the direction
+ * that matters (a revoked licence "can never be un-revoked").
+ *
+ * Reads the environment the SERVER put on <body> rather than any client-side
+ * guess: only the backend can honestly say which backend it is, and a
+ * frontend-side label would keep saying "production" while pointed elsewhere.
+ *
+ * On production it adds a plain "PRODUCTION —" prefix rather than staying
+ * silent: this is the one dialog where the real environment matters most, and
+ * silence there is what makes a wrong-environment click possible.
+ */
+export function confirmAction(message: string): boolean {
+  if (typeof document === "undefined") return false;
+
+  const env = document.body?.dataset?.oeEnv || "";
+  const host = document.body?.dataset?.oeBackend || "";
+
+  // No environment reported → say so rather than implying production. An
+  // unidentified backend is exactly when a confirmation should give pause.
+  const header = !env
+    ? `⚠️ UNIDENTIFIED BACKEND${host ? ` (${host})` : ""}\n\n`
+    : env === "production"
+      ? `PRODUCTION${host ? ` — ${host}` : ""}\n\n`
+      : `⚠️ ${env.toUpperCase()} — NOT PRODUCTION${host ? ` (${host})` : ""}\n\n`;
+
+  return window.confirm(header + message);
+}
