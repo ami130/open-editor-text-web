@@ -12,9 +12,10 @@ import LicensesPanel from "./LicensesPanel";
 import RolesPanel from "./RolesPanel";
 import UsersPanel from "./UsersPanel";
 import OrdersPanel from "./OrdersPanel";
+import EnginePanel from "./EnginePanel";
 import { hasPermission } from "@/lib/permissions";
 
-type Section = "overview" | "packages" | "orders" | "customers" | "licenses" | "roles" | "users";
+type Section = "overview" | "packages" | "orders" | "customers" | "licenses" | "engine" | "roles" | "users";
 type NavItem = { id: Section; label: string; icon: string };
 type NavGroup = { heading: string | null; items: NavItem[] };
 
@@ -24,6 +25,10 @@ export default function AdminDashboard({ permissions }: { permissions: string[] 
   const canOrders = hasPermission(permissions, "order.read");
   const canRoles = hasPermission(permissions, "role.read") || hasPermission(permissions, "role.manage");
   const canUsers = hasPermission(permissions, "user.read") || hasPermission(permissions, "user.manage");
+  // engine.read alone is enough to SEE the panel; promote/default/rollback are
+  // separately enforced by the backend, so a read-only operator gets the view
+  // (which is the part that matters during an incident) without the controls.
+  const canEngine = hasPermission(permissions, "engine.read");
 
   // Grouped navigation. Empty groups (all items gated out) are dropped below.
   const groups: NavGroup[] = [
@@ -42,6 +47,7 @@ export default function AdminDashboard({ permissions }: { permissions: string[] 
     {
       heading: "Operate",
       items: [
+        ...(canEngine ? [item("engine", "Engine", "◈")] : []),
         ...(canRoles ? [item("roles", "Roles", "⛊")] : []),
         ...(canUsers ? [item("users", "Admin users", "◔")] : []),
       ],
@@ -107,6 +113,7 @@ export default function AdminDashboard({ permissions }: { permissions: string[] 
         {section === "overview" && <OverviewPanel permissions={permissions} onNavigate={go} />}
         {section === "packages" && <PackagesPanel />}
         {section === "orders" && canOrders && <OrdersPanel />}
+        {section === "engine" && canEngine && <EnginePanel />}
         {section === "customers" && <CustomersPanel />}
         {section === "licenses" && <LicensesPanel />}
         {section === "roles" && canRoles && <RolesPanel canManage={hasPermission(permissions, "role.manage")} />}
