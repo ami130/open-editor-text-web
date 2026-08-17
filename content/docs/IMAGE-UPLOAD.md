@@ -52,9 +52,10 @@ in `getHTML()` and, therefore, in whatever you persist.
 Set one option, `imageUploadUrl`:
 
 ```js
-import { OpenEditor } from 'openeditor-text';
+import { createEditor } from 'openeditor-text';
 
-const editor = new OpenEditor('#app', {
+const editor = await createEditor('#app', {
+  endpoint,
   imageUploadUrl: 'https://api.yoursite.com/uploads/editor-image',
 });
 ```
@@ -114,7 +115,8 @@ uses.
 **Bearer token / API key — `imageUploadHeaders`:**
 
 ```js
-new OpenEditor('#app', {
+await createEditor('#app', {
+  endpoint,
   imageUploadUrl: 'https://api.yoursite.com/uploads/editor-image',
   imageUploadHeaders: {
     Authorization: `Bearer ${myAccessToken}`,
@@ -128,7 +130,8 @@ Because the token often changes (refresh, per-session), you can pass a
 token:
 
 ```js
-new OpenEditor('#app', {
+await createEditor('#app', {
+  endpoint,
   imageUploadUrl: '/api/uploads',
   imageUploadHeaders: () => ({ Authorization: `Bearer ${getToken()}` }),
 });
@@ -144,7 +147,8 @@ If your API authenticates with a session cookie and the upload is cross-origin,
 send credentials:
 
 ```js
-new OpenEditor('#app', {
+await createEditor('#app', {
+  endpoint,
   imageUploadUrl: 'https://api.yoursite.com/uploads',
   imageUploadWithCredentials: true, // sends cookies cross-origin
 });
@@ -159,7 +163,8 @@ specific `Access-Control-Allow-Origin` — not `*`.)
 `imageUploadData` (object, or a function of the file):
 
 ```js
-new OpenEditor('#app', {
+await createEditor('#app', {
+  endpoint,
   imageUploadUrl: '/api/uploads',
   imageUploadData: { postId: '123', folder: 'articles' },
   // or dynamic:
@@ -173,7 +178,8 @@ file, so you can store the row against the right post/user/folder.
 **Rename the file field** if your backend doesn't expect `file`:
 
 ```js
-new OpenEditor('#app', {
+await createEditor('#app', {
+  endpoint,
   imageUploadUrl: '/api/uploads',
   imageUploadFieldName: 'image', // now sent as the `image` field, not `file`
 });
@@ -185,7 +191,8 @@ If your API can't return `{ url }` or `{ data: { url } }`, transform its
 response client-side with `imageUploadResponse` (Jodit's `process()` equivalent):
 
 ```js
-new OpenEditor('#app', {
+await createEditor('#app', {
+  endpoint,
   imageUploadUrl: '/api/uploads',
   // Server returns e.g. { result: { fileUrl: "https://cdn/x.webp" } }
   imageUploadResponse: (json) => json.result.fileUrl,
@@ -210,7 +217,8 @@ It cannot express:
 For those, `imageUploadHandler` hands the whole upload to you:
 
 ```js
-new OpenEditor('#app', {
+await createEditor('#app', {
+  endpoint,
   imageUploadHandler: async (file, { signal, onProgress }) => {
     // 1. Ask your API where to put it.
     const { uploadUrl, publicUrl } = await fetch('/api/sign-upload', {
@@ -373,7 +381,7 @@ by default** (it bloats saved content and isn't stored anywhere you control). To
 allow it anyway — e.g. a quick demo with no backend — opt in:
 
 ```js
-new OpenEditor('#app', { imageAllowDataUri: true });
+await createEditor('#app', { endpoint, imageAllowDataUri: true });
 ```
 
 For anything production, prefer `imageUploadUrl` so images live in your storage,
