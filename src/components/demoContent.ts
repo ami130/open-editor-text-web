@@ -1,5 +1,5 @@
 /**
- * Rich default content shared by the homepage hero editor and the playground:
+ * Rich default content for the homepage hero editor:
  * one glance shows headings, formatting, an image, a table, a sandboxed video
  * embed, quotes, and to-do lists — so visitors immediately see the advanced
  * features, not an empty box. Everything here survives the editor's sanitizer
@@ -37,11 +37,5 @@ const SHOWCASE = [
 export const HERO_CONTENT = [
   "<h1>This editor is real — try it ✨</h1>",
   '<p>Click anywhere and type. Select text for <strong>bold</strong>, <em>italic</em>, <u>underline</u>, <a href="/docs">links</a> and <code>inline code</code> — or press <code>/</code> for the command palette.</p>',
-  SHOWCASE,
-].join("");
-
-export const PLAYGROUND_CONTENT = [
-  "<h1>Playground ✨</h1>",
-  "<p>Everything you toggle on the left rebuilds this editor live — and the code panel below always shows exactly what you&rsquo;d ship. Press <code>/</code> for the command palette.</p>",
   SHOWCASE,
 ].join("");

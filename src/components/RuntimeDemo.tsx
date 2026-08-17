@@ -3,38 +3,24 @@
 /**
  * RuntimeDemo — what a REAL customer gets from `npm install openeditor-text`.
  *
- * ─── WHY THIS IS A SEPARATE PAGE, NOT A PLAYGROUND REWRITE ──────────────────
- * /playground showcases INDIVIDUAL plugin factories and locale packs, which
- * only exist as importable objects in v1. In v2 the engine — and every plugin
- * in it — is fetched at runtime, so there is nothing to import and nothing to
- * toggle. Rewriting the playground for v2 would have meant DELETING its
- * toggles and language switcher: a worse demo, to showcase a better
- * architecture. So the playground keeps v1 (via an npm alias) and this page
- * shows v2 properly.
- *
  * ─── WHAT IT IS BUILT TO PROVE ──────────────────────────────────────────────
- * That the npm package contains no engine. Everything below is measured from
- * the live page rather than asserted in prose: the session round-trip, the
- * bundle URL actually fetched, its size, and the SHA-256 the loader verifies
- * before executing a single byte. Open DevTools → Network and the same two
- * requests are visible there.
+ * That the npm package contains no engine. The visitor sees a working editor
+ * that was not in the bundle a moment ago, and DevTools → Network shows where
+ * it came from: `POST /delivery/session`, then the engine itself.
+ *
+ * ─── WHY THERE IS NO METRICS PANEL ──────────────────────────────────────────
+ * There used to be a "This page load" readout (plan, digest, bytes, timing).
+ * It cost a SECOND `openSession` call on every load, purely to have numbers to
+ * print — a round-trip no real integration makes. The proof lives in the
+ * Network tab, which is the more convincing place for it anyway, so the panel
+ * and its extra request are both gone. `createEditor` now opens the one
+ * session a customer would open, and nothing more.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const ENDPOINT =
   process.env.NEXT_PUBLIC_DELIVERY_ENDPOINT ||
   "https://open-editor-text-backend-production.up.railway.app";
-
-interface Trace {
-  plan: string;
-  features: number;
-  version: string;
-  bundleKey: string;
-  sha: string;
-  bytes: number | null;
-  verified: boolean | null;
-  ms: number;
-}
 
 /** The live editor, as returned by createEditor. */
 type LiveEditor = Awaited<ReturnType<
@@ -46,53 +32,16 @@ export default function RuntimeDemo() {
   const editorRef = useRef<LiveEditor | null>(null);
   const [licenceKey, setLicenceKey] = useState("");
   const [applied, setApplied] = useState("");
-  const [trace, setTrace] = useState<Trace | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
 
   const load = useCallback(async (key: string) => {
     setBusy(true);
     setError(null);
-    setTrace(null);
-    const started = performance.now();
     try {
       // The ONLY import from the npm package. Everything the editor can do
       // arrives over the network after this call.
-      const { createEditor, openSession, fetchEngine } = await import("openeditor-text");
-
-      // ⚠️ There is deliberately NO way to hand a session to createEditor — it
-      // always opens its own (see LoaderOnlyOptions in index.d.ts). So this
-      // page opens one FIRST, purely to read the real plan/version/digest, and
-      // mounts second. The mount's own bundle fetch is then served from the
-      // IndexedDB cache this call just populated, so the visitor still
-      // downloads the ~600 KB engine exactly once.
-      //
-      // The Network tab therefore shows two `POST /delivery/session` calls on
-      // THIS page and one on a customer's. That is a cost of showing the
-      // numbers, not something a real integration pays — the alternative was
-      // printing figures I had not actually measured.
-      const session = await openSession({
-        endpoint: ENDPOINT,
-        ...(key ? { licenceKey: key } : {}),
-      });
-
-      // Re-verify the digest ourselves so the "verified" badge below reports a
-      // check that actually ran here, rather than restating a claim. This uses
-      // the loader's own fetchEngine, which REJECTS on mismatch — so reaching
-      // the next line is itself the proof.
-      const url = session.engine.url.startsWith("http")
-        ? session.engine.url
-        : `${ENDPOINT}${session.engine.url}`;
-      let bytes: number | null = null;
-      let verified: boolean | null = null;
-      try {
-        const source = await fetchEngine(url, session.engine.sha256);
-        bytes = new Blob([source]).size;
-        verified = true;
-      } catch {
-        // Measurement is a nicety; a failure here must not block the editor.
-        // (A genuine digest mismatch also fails the mount below, loudly.)
-      }
+      const { createEditor } = await import("openeditor-text");
 
       // Tear the previous editor down properly before mounting another.
       // Wiping innerHTML alone would orphan its listeners and its entitlement
@@ -115,16 +64,6 @@ export default function RuntimeDemo() {
       // not already reach through the DOM.
       (window as unknown as { __oeEditor?: unknown }).__oeEditor = editorRef.current;
 
-      setTrace({
-        plan: session.plan,
-        features: session.features.length,
-        version: session.version,
-        bundleKey: session.engine.key,
-        sha: session.engine.sha256,
-        bytes,
-        verified,
-        ms: Math.round(performance.now() - started),
-      });
       setApplied(key);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load the editor");
@@ -144,13 +83,6 @@ export default function RuntimeDemo() {
     startedRef.current = true;
     void load("");
   }, [load]);
-
-  const row = (label: string, value: React.ReactNode) => (
-    <div className="flex justify-between gap-4 py-1 text-sm">
-      <span style={{ color: "var(--ink-muted)" }}>{label}</span>
-      <span className="text-right font-mono text-xs" style={{ color: "var(--ink)" }}>{value}</span>
-    </div>
-  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -189,41 +121,12 @@ export default function RuntimeDemo() {
             className="rounded-xl p-4"
             style={{ border: "1px solid var(--edge)", background: "var(--paper-raised)" }}
           >
-            <h3 className="mb-2 text-sm font-semibold" style={{ color: "var(--ink)" }}>
-              This page load
-            </h3>
-            {trace ? (
-              <>
-                {row("plan", trace.plan)}
-                {row("features granted", trace.features)}
-                {row("engine version", trace.version)}
-                {row("bundle", trace.bundleKey)}
-                {row("bytes fetched", trace.bytes ? `${(trace.bytes / 1024).toFixed(0)} KB` : "—")}
-                {row(
-                  "SHA-256",
-                  trace.verified === null
-                    ? "—"
-                    : trace.verified
-                      ? <span style={{ color: "#137333" }}>verified</span>
-                      : <span style={{ color: "#b3261e" }}>MISMATCH</span>,
-                )}
-                {row("time to editor", `${trace.ms} ms`)}
-              </>
-            ) : (
-              <p className="text-sm" style={{ color: "var(--ink-muted)" }}>Measuring…</p>
-            )}
-          </div>
-
-          <div
-            className="rounded-xl p-4"
-            style={{ border: "1px solid var(--edge)", background: "var(--paper-raised)" }}
-          >
             <h3 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>
               Try a licence key
             </h3>
             <p className="mt-1 text-xs" style={{ color: "var(--ink-muted)" }}>
               Same install, different entitlement. Paste a key and the server decides what to
-              send — watch the bundle name and SHA change.
+              send — watch the toolbar change.
             </p>
             <textarea
               value={licenceKey}

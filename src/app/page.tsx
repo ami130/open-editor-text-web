@@ -81,8 +81,8 @@ export default function Home() {
             measurements to prove every word of that sentence.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/playground" className="btn-primary rounded-xl px-6 py-3 font-medium">
-              Try the playground
+            <Link href="/demo" className="btn-primary rounded-xl px-6 py-3 font-medium">
+              Try the live demo
             </Link>
             <Link
               href="/docs"
@@ -207,12 +207,12 @@ export default function Home() {
             Nothing to unlock. Nothing phoning home.
           </h2>
           <p className="mx-auto mt-3 max-w-xl" style={{ color: "var(--ink-muted)" }}>
-            Every feature on this site is live in the playground right now — no trial,
+            Every feature on this site is live in the demo right now — no trial,
             no key, no sales call.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/playground" className="btn-primary rounded-xl px-6 py-3 font-medium">
-              Open the playground
+            <Link href="/demo" className="btn-primary rounded-xl px-6 py-3 font-medium">
+              Open the live demo
             </Link>
             <Link href="/compare" className="card card-hover rounded-xl border px-6 py-3 font-medium">
               Compare with Jodit &amp; CKEditor

@@ -11,15 +11,15 @@ const ROWS: Row[] = [
   ["License key required", "Never", "Yes — even for the GPL tier", "No (MIT core)"],
   ["Core size (min+gzip)", "~61 KB", "~200 KB+", "~100 KB"],
   ["Runtime dependencies", "0", "Multiple internal packages", "0"],
-  ["Slash commands", "✓ Free", "Paid", "Paid (PRO)", "/playground"],
-  ["To-do lists", "✓ Free", "✓ Free", "Paid (PRO)", "/playground"],
-  ["Change case", "✓ Free", "Paid", "Paid (PRO)", "/playground"],
-  ["Format painter", "✓ Free", "Paid", "✓ Free", "/playground"],
-  ["Source view w/ highlighting", "✓ Free, zero-dep", "Paid (enhanced)", "Free (needs ACE from CDN)", "/playground"],
-  ["Typing autocorrect", "✓ Free", "✓ Free", "—", "/playground"],
+  ["Slash commands", "✓ Free", "Paid", "Paid (PRO)", "/demo"],
+  ["To-do lists", "✓ Free", "✓ Free", "Paid (PRO)", "/demo"],
+  ["Change case", "✓ Free", "Paid", "Paid (PRO)", "/demo"],
+  ["Format painter", "✓ Free", "Paid", "✓ Free", "/demo"],
+  ["Source view w/ highlighting", "✓ Free, zero-dep", "Paid (enhanced)", "Free (needs ACE from CDN)", "/demo"],
+  ["Typing autocorrect", "✓ Free", "✓ Free", "—", "/demo"],
   ["Markdown export", "✓ Free (getMarkdown)", "Free (data format)", "—"],
-  ["@Mentions", "✓ Free", "Free UI (paid backend)", "Paid (PRO)", "/playground"],
-  ["UI locale packs", "5 incl. RTL Arabic", "38", "30+", "/playground"],
+  ["@Mentions", "✓ Free", "Free UI (paid backend)", "Paid (PRO)", "/demo"],
+  ["UI locale packs", "5 incl. RTL Arabic", "38", "30+", "/demo"],
   ["WCAG conformance statement", "✓ Published + CI-enforced", "✓ (VPAT)", "—", "/docs/ACCESSIBILITY"],
   ["Built-in XSS sanitizer", "✓ Adversarially CI-tested", "Partial (integrator's job)", "Hooks only", "/docs/SECURITY"],
   ["Telemetry / phone-home", "None", "License checks", "None"],
@@ -32,7 +32,7 @@ export default function ComparePage() {
       <p className="mt-2 mb-8 max-w-prose" style={{ color: "var(--ink-muted)" }}>
         Compiled 2026-07 against CKEditor 5 (v48) and Jodit 4. Sizes are measured
         minified+gzip. Where a row says “free here,” you can verify it in the
-        playground right now — that&apos;s what the proof links are.
+        live demo right now — that&apos;s what the proof links are.
       </p>
       <div className="overflow-x-auto rounded-xl border" style={{ borderColor: "var(--edge)" }}>
         <table className="w-full text-sm">

@@ -20,9 +20,6 @@ importers:
       openeditor-text:
         specifier: ^2.1.0
         version: 2.1.0(react@19.2.4)
-      openeditor-text-v1:
-        specifier: npm:openeditor-text@1.2.0
-        version: openeditor-text@1.2.0
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -2216,10 +2213,6 @@ packages:
   object.values@1.2.1:
     resolution: {integrity: sha512-gXah6aZrcUxjWg2zR2MwouP2eHlCBzdV4pygudehaKXSGW4v2AsRQUK+lwwXhii6KFZcunEnmSUoYp5CXibxtA==}
     engines: {node: '>= 0.4'}
-
-  openeditor-text@1.2.0:
-    resolution: {integrity: sha512-zC42ik+3kHe3jgwHpRPZKQml2KminEZe+7lQO3fKczBQHZUmb4s+/EqnBPDH+Il7mJCPRdpg4te7HnwD7MXuIA==}
-    engines: {node: '>=18'}
 
   openeditor-text@2.1.0:
     resolution: {integrity: sha512-fyv0Eo5QiczCU24XmndMsGf5BXHYbH5oRpM1aSJg4dCP6AWgTQN+CoRcXZ1+iJAs6B1T2UwNzGMrot4fp0oU/w==}
@@ -5168,8 +5161,6 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.2
-
-  openeditor-text@1.2.0: {}
 
   openeditor-text@2.1.0(react@19.2.4):
     optionalDependencies:

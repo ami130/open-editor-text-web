@@ -100,19 +100,13 @@ const nextConfig: NextConfig = {
    * normally. Neither deployment target needs a config change.
    */
   ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
-  /**
-   * The v1 engine probes for its private premium plugins with dynamic imports
-   * that are already wrapped in try/catch, so an absent package is harmless at
-   * runtime. Turbopack resolves those specifiers statically and fails the build
-   * anyway, so they are pointed at a local stub. See src/lib/premium-absent.ts
-   * for why the stub is empty and why v2 is unaffected.
+  /*
+   * NOTE: there were `@openeditor-premium/*` resolveAlias entries here, needed
+   * only because the v1 engine on disk probed for its private premium plugins
+   * with dynamic imports that Turbopack resolves statically. v2 fetches the
+   * engine (premium included) at runtime, so the bundler never sees those
+   * specifiers. The aliases and their stub went out with v1.
    */
-  turbopack: {
-    resolveAlias: {
-      "@openeditor-premium/export-pdf": "./src/lib/premium-absent.ts",
-      "@openeditor-premium/export-docx": "./src/lib/premium-absent.ts",
-    },
-  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
