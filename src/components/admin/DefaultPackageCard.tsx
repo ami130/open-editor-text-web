@@ -27,6 +27,20 @@ interface Designation {
   name: string | null;
 }
 
+/**
+ * Features no FREE engine build contains — only the premium bundle carries the
+ * code. Verified against the live registry by diffing an anonymous session
+ * against a licensed one, rather than assumed from the names.
+ *
+ * The backend already does the real decision (`planForFeatures` picks the
+ * cheapest build that supports everything the package grants). This list exists
+ * ONLY so the confirm step can say, before the click, what that decision will
+ * mean — the alternative is discovering it later in a bundle diff. If the two
+ * ever disagree the backend wins; the worst case here is a warning that is
+ * slightly over- or under-eager, never a wrong entitlement.
+ */
+const PREMIUM_ONLY_FEATURES = new Set(["export.pdf", "export.docx"]);
+
 export default function DefaultPackageCard({
   packages,
   onChanged,
@@ -82,6 +96,17 @@ export default function DefaultPackageCard({
 
   const currentPkg = packages.find((p) => p.id === current?.packageId) || null;
   const pickedPkg = packages.find((p) => p.id === picked) || null;
+
+  /**
+   * Which premium-only features this choice would hand to anonymous visitors.
+   *
+   * Non-empty means the backend will resolve the PREMIUM bundle for everyone
+   * with no licence — so the export code itself, not merely permission to use
+   * it, is downloaded by every visitor. That is a legitimate thing to choose;
+   * it is not a legitimate thing to choose by accident.
+   */
+  const givesAwayPremium = (pickedPkg?.features ?? [])
+    .filter((f) => PREMIUM_ONLY_FEATURES.has(f.id));
 
   async function apply() {
     if (!picked) return;
@@ -187,6 +212,29 @@ export default function DefaultPackageCard({
                 {currentPkg ? ` instead of ${currentPkg.features.length}` : ""}. This applies
                 immediately, to everyone, with no deploy.
               </p>
+              {/* Giving premium features away is not just an entitlement change:
+                  those features only exist in the PREMIUM bundle, so choosing
+                  this makes every anonymous visitor download the export code
+                  itself. That is reversible (the designation can be changed
+                  back) but not retractable — bytes already delivered stay
+                  delivered. Worth one sentence before the click rather than a
+                  discovery in a bundle diff afterwards. */}
+              {givesAwayPremium.length > 0 && (
+                <div
+                  className="mt-3 rounded-md px-3 py-2 text-sm"
+                  style={{ background: "color-mix(in oklab, #b26a00 16%, transparent)", color: "var(--ink)" }}
+                >
+                  <strong>
+                    This ships the premium engine to every anonymous visitor.
+                  </strong>{" "}
+                  {givesAwayPremium.map((f) => f.title || f.id).join(" and ")}{" "}
+                  {givesAwayPremium.length === 1 ? "exists" : "exist"} only in the paid
+                  bundle, so visitors with no licence will download that code — roughly
+                  40&nbsp;KB more per visitor, and the export implementation itself is
+                  readable by anyone. Entitlement still holds for licensed features; what
+                  changes is who receives the code.
+                </div>
+              )}
               {/* A REDUCTION is the dangerous direction, and the sentence above
                   states it as a neutral fact ("7 instead of 53") that is easy to
                   skim past. Losing features is what an existing free user will
