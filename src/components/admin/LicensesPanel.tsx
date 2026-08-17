@@ -5,7 +5,7 @@
  *  regenerate + renew + rebind + resend-email + dismiss-flag. Presentation uses
  *  the shared admin UI kit; all data/actions logic is unchanged. */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiGet, apiPost, type Customer, type License, type Package } from "./types";
+import { apiGet, apiPost, apiPatch, type Customer, type License, type Package } from "./types";
 import { ErrorBox } from "./PackagesPanel";
 import { CopyButton, PageHeader, Card, Badge, Button, useToasts, confirmAction } from "./ui";
 
@@ -174,6 +174,72 @@ export default function LicensesPanel() {
     finally { setBusyId(null); }
   }
 
+  /**
+   * Which engine BUILD this one customer receives (§1.2).
+   *
+   * The resolution chain is `pin → override → channel default → global
+   * default`. These fields were readable in the API and settable only by curl,
+   * so "put this customer on beta" or "move this customer off a bad build"
+   * meant editing the database — the exact thing that goes wrong at 3am.
+   *
+   * Does NOT re-mint the token: these resolve server-side per session, so the
+   * change lands on the customer's next page load with nothing to re-paste.
+   * That is why there is no "copy the new key" step here, unlike renew/rebind.
+   */
+  async function setDelivery(l: License, patch: Record<string, string>, describe: string) {
+    if (!confirmAction(
+      `${describe}\n\nFor: ${l.customer?.name || l.customer?.email || l.id}\n\n`
+      + "Applies on their next page load. No new key — nothing for them to re-paste.",
+    )) return;
+    setBusyId(l.id); setRowErr(l.id, null);
+    try {
+      await apiPatch<License>(`/api/admin/licenses/${l.id}/delivery`, patch);
+      notify("success", describe);
+      await load(search, status);
+    } catch (e) { const msg = (e as Error).message; setRowErr(l.id, msg); notify("error", `Delivery change failed: ${msg}`); }
+    finally { setBusyId(null); }
+  }
+
+  /** Move a licence between release channels — the opt-in for early builds. */
+  async function changeChannel(l: License) {
+    const next = window.prompt(
+      "Release channel for this licence:\n\n"
+      + "  stable   — the default; only promoted builds\n"
+      + "  beta     — opt in to builds promoted to beta\n"
+      + "  internal — opt in to everything, including unpromoted builds\n",
+      l.channel || "stable",
+    );
+    if (!next || next === l.channel) return;
+    await setDelivery(l, { channel: next.trim() }, `Channel → ${next.trim()}`);
+  }
+
+  /**
+   * An admin override pins ONE customer to a specific build. The backend
+   * REFUSES it without a reason, so ask for one here rather than letting the
+   * request fail — an unexplained override is impossible to review later.
+   */
+  async function changeOverride(l: License) {
+    const next = window.prompt(
+      "Pin this ONE customer to a specific engine version.\n\n"
+      + "Leave EMPTY to clear the override and let them follow the normal chain.",
+      l.overrideVersion || "",
+    );
+    if (next === null) return;
+    const version = next.trim();
+    if (!version) {
+      await setDelivery(l, { overrideVersion: "" }, "Override cleared");
+      return;
+    }
+    const reason = window.prompt(
+      `Why is ${l.customer?.email || "this customer"} being held on ${version}?\n\n`
+      + "Required — it is the only record, and an override nobody can explain never gets removed.",
+      l.overrideReason || "",
+    );
+    if (!reason?.trim()) { notify("error", "an override needs a reason"); return; }
+    await setDelivery(l, { overrideVersion: version, overrideReason: reason.trim() },
+      `Override → ${version}`);
+  }
+
   async function renew(l: License) {
     setBusyId(l.id); setRowErr(l.id, null); setRegeneratedToken(null);
     try {
@@ -244,6 +310,17 @@ export default function LicensesPanel() {
                       {l.kid && backendKid && l.kid !== backendKid ? (
                         <Badge tone="bad">⚠ signed by {l.kid}, not {backendKid}</Badge>
                       ) : null}
+                      {/* Only shown when this licence is OFF the normal path.
+                          A badge on every row would be noise; the point is to
+                          make the exceptions findable — an override nobody can
+                          see is an override nobody reviews. */}
+                      {l.pinnedVersion ? <Badge tone="brand">pinned {l.pinnedVersion}</Badge> : null}
+                      {l.overrideVersion ? (
+                        <Badge tone="warn">override {l.overrideVersion}</Badge>
+                      ) : null}
+                      {l.channel && l.channel !== "stable" ? (
+                        <Badge tone="warn">{l.channel}</Badge>
+                      ) : null}
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {l.features.map((f) => (
@@ -267,6 +344,12 @@ export default function LicensesPanel() {
                     )}
                     <Button size="sm" disabled={busyId === l.id} onClick={() => renew(l)} title="Re-mint a fresh token with a new expiry on this same license">
                       {busyId === l.id ? "…" : "Renew"}
+                    </Button>
+                    <Button size="sm" disabled={busyId === l.id} onClick={() => changeChannel(l)} title="Release channel: stable / beta / internal — which builds this customer may receive">
+                      Channel
+                    </Button>
+                    <Button size="sm" disabled={busyId === l.id} onClick={() => changeOverride(l)} title="Pin this ONE customer to a specific engine version (needs a reason)">
+                      Build
                     </Button>
                     <Button size="sm" disabled={busyId === l.id} onClick={() => rebind(l)} title="Change this license's domains → new key, emailed to the customer">
                       {busyId === l.id ? "…" : "Rebind domains"}

@@ -43,6 +43,19 @@ export interface License {
    * in the list, flagged when it does not match the backend in use.
    */
   kid?: string;
+  /**
+   * Which engine BUILD this licence resolves to (§1.2). The chain is
+   * `pin → override → channel default → global default`, so an empty pin or
+   * override means "fall through to the next step".
+   *
+   * The backend has always returned these; they were simply never typed here,
+   * so the panel could not show or edit them.
+   */
+  channel?: string;
+  pinnedVersion?: string;
+  overrideVersion?: string;
+  overrideReason?: string;
+  overrideReviewAt?: number;
 }
 
 /** GET/POST helpers that throw a readable Error on non-2xx. */
